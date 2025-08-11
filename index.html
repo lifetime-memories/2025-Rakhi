@@ -1,0 +1,925 @@
+
+        <!DOCTYPE html>
+        <html><head><meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <title>Image Gallery</title>
+        <style>
+        html, body { 
+            background: #222; 
+            color: #eee; 
+            margin: 0; 
+            padding: 0;
+            font-family: sans-serif;
+            min-height: 100vh;
+            width: 100%;
+            overflow-x: hidden;
+            box-sizing: border-box;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+        .gallery-header {
+            padding: 20px;
+            text-align: center;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .gallery-title {
+            margin: 0;
+            font-size: 24px;
+            color: #fff;
+            word-wrap: break-word;
+            max-width: 100%;
+        }
+        @media (max-width: 600px) {
+            .gallery-header {
+                padding: 20px 16px;
+                min-height: 70px;
+            }
+            .gallery-title {
+                font-size: 22px;
+            }
+        }
+        .gallery-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #aaa;
+        }
+        .gallery-view {
+            position: relative;
+            min-height: 100vh;
+            width: 100%;
+            max-width: 100vw;
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0;
+            padding: 0;
+        }
+        .image-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            background: #222;
+            flex-direction: column;
+            z-index: 1000;
+            touch-action: manipulation;
+            overflow: hidden;
+        }
+        .image-view.mobile {
+            background: rgba(0, 0, 0, 0.95);
+        }
+        .image-view.mobile .controls-container {
+            display: none !important;
+        }
+        .context-menu {
+            display: none;
+            position: fixed;
+            background: rgba(40, 40, 40, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 8px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 2000;
+        }
+        .context-menu-item {
+            padding: 12px 24px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .context-menu-item:active {
+            background: rgba(255,255,255,0.1);
+        }
+        .gallery-container {
+            width: 100%;
+            max-width: 100vw;
+            margin: 0 auto;
+            padding: 0 24px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .masonry { 
+            column-count: 10; 
+            column-gap: 8px; 
+            padding: 24px 0;
+            width: 100%;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+        .masonry img { 
+            width: 100%; 
+            margin-bottom: 8px; 
+            border-radius: 4px;
+            box-shadow: none;
+            display: block; 
+            break-inside: avoid; 
+            background: #222; 
+            cursor: pointer;
+            transition: transform 0.15s ease-out;
+            height: auto;
+            vertical-align: middle;
+            max-width: 100%;
+        }
+        .masonry img:hover {
+            transform: scale(1.02);
+        }
+        /* Default desktop layout */
+        .masonry { 
+            column-count: 10;
+            column-gap: 8px;
+            padding: 24px 0;
+        }
+
+        /* Mobile-specific detection */
+        @media only screen 
+        and (max-device-width: 812px)
+        and (-webkit-min-device-pixel-ratio: 2),
+        only screen and (max-device-width: 812px)
+        and (min-resolution: 192dpi) { 
+            .gallery-header {
+                padding: 48px 24px;
+                background: rgba(0,0,0,0.85);
+                backdrop-filter: blur(15px);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: auto;
+                width: 100vw;
+                margin: 0;
+                box-sizing: border-box;
+                box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+            }
+            .gallery-title {
+                font-size: 24px;
+                line-height: 1.3;
+                padding: 0;
+                margin: 0;
+                width: 100%;
+                text-align: center;
+                font-weight: 600;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+            .gallery-info {
+                font-size: 20px;
+                margin-top: 24px;
+                opacity: 0.95;
+                width: 100%;
+                text-align: center;
+            }
+            .gallery-container {
+                padding: 15px;
+                width: 100vw;
+                max-width: 100%;
+                margin: 0 auto;
+                box-sizing: border-box;
+                background: #222;
+                display: flex;
+                justify-content: center;
+            }
+            .masonry { 
+                column-count: 2 !important;
+                column-gap: 15px;
+                padding: 0;
+                margin: 0;
+                width: 100%;
+                max-width: 800px;
+            }
+            .masonry img {
+                border-radius: 12px;
+                margin-bottom: 15px;
+                box-shadow: none;
+                transition: none;
+                position: relative;
+                -webkit-tap-highlight-color: transparent;
+            }
+            /* Remove any hover/active effects on mobile */
+            .masonry img:active,
+            .masonry img:hover {
+                transform: none;
+                box-shadow: none;
+            }
+        }
+            .masonry img:active {
+                transform: scale(0.98);
+            }
+            /* Improve touch targets */
+            button {
+                padding: 16px 24px;
+                border-radius: 14px;
+                font-size: 17px;
+                margin: 10px 0;
+                min-height: 54px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            }
+            /* Add more breathing room at the bottom */
+            .gallery-view {
+                padding-bottom: 32px;
+            }
+        }
+
+        /* Tablet-specific detection */
+        @media only screen 
+        and (min-device-width: 813px) 
+        and (max-device-width: 1366px)
+        and (-webkit-min-device-pixel-ratio: 1.5) {
+            .masonry { 
+                column-count: 3 !important;
+                column-gap: 8px;
+            }
+            .gallery-container {
+                padding: 0 12px;
+            }
+        }
+
+        /* Desktop and general responsive breakpoints */
+        @media screen and (max-width: 576px) {
+            .masonry { 
+                column-count: 2;
+                column-gap: 6px;
+                padding: 12px 0;
+            }
+            .gallery-container {
+                padding: 0 8px;
+            }
+        }
+        @media screen and (min-width: 577px) and (max-width: 768px) {
+            .masonry { 
+                column-count: 3;
+                column-gap: 6px;
+            }
+            .gallery-container {
+                padding: 0 12px;
+            }
+        }
+        @media screen and (min-width: 769px) and (max-width: 992px) {
+            .masonry { column-count: 4; }
+            .gallery-container { padding: 0 16px; }
+        }
+        @media screen and (min-width: 993px) and (max-width: 1200px) {
+            .masonry { column-count: 5; }
+            .gallery-container { padding: 0 20px; }
+        }
+        @media screen and (min-width: 1201px) and (max-width: 1600px) {
+            .masonry { column-count: 6; }
+        }
+        @media screen and (min-width: 1601px) and (max-width: 1920px) {
+            .masonry { column-count: 8; }
+        }
+        @media screen and (min-width: 1921px) {
+            .masonry { column-count: 10; }
+        }
+
+        /* Touch device optimizations */
+        @media (hover: none) and (pointer: coarse) {
+            .gallery-header {
+                padding: 48px 24px;
+                font-size: 42px;
+            }
+            .gallery-container {
+                padding: 15px;
+                margin: 0 auto;
+                display: flex;
+                justify-content: center;
+            }
+            .masonry {
+                column-count: 2 !important;
+                column-gap: 15px;
+                max-width: 800px;
+            }
+            .masonry img {
+                margin-bottom: 15px;
+                border-radius: 12px;
+                -webkit-tap-highlight-color: transparent;
+            }
+            /* Hide desktop controls on mobile */
+            .controls-container {
+                display: none !important;
+            }
+            /* Only force 2 columns if it's also a small screen */
+            @media (max-width: 576px) {
+                .masonry {
+                    column-count: 2 !important;
+                }
+            }
+        }
+
+        /* Custom scrollbar styles */
+        ::-webkit-scrollbar {
+            width: 12px;
+            background: #333;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #666;
+            border-radius: 6px;
+            border: 2px solid #333;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #888;
+        }
+
+        /* Image viewer styles */
+        .viewer-header {
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .viewer-title {
+            font-size: 1.2rem;
+            margin: 0;
+            word-break: break-all;
+        }
+        .viewer-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .viewer-buttons button {
+            padding: 8px 16px;
+            font-size: 1rem;
+            border-radius: 4px;
+            border: none;
+            background: #444;
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+            min-width: 44px;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+        .viewer-buttons button:hover {
+            background: #666;
+        }
+        @media (max-width: 600px) {
+            .viewer-header {
+                padding: 12px;
+            }
+            .viewer-title {
+                font-size: 1rem;
+                width: 100%;
+            }
+            .viewer-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+            .viewer-buttons button {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+        }
+        .viewer-content {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            -webkit-overflow-scrolling: touch;
+            background: rgba(0, 0, 0, 0.9);
+        }
+        .viewer-img {
+            max-width: 100%;
+            max-height: calc(100vh - 120px);
+            border-radius: 4px;
+            box-shadow: none;
+            transition: transform 0.2s ease-out;
+            touch-action: manipulation;
+            background: #222;
+            object-fit: contain;
+        }
+        /* Mobile image viewer styles */
+        @media (hover: none) and (pointer: coarse) {
+            .viewer-content {
+                padding: 0;
+                overflow: hidden;
+                position: relative;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .viewer-img {
+                max-height: 100vh;
+                border-radius: 0;
+                object-fit: contain;
+                transform-origin: center center;
+                position: relative;
+                flex-shrink: 0;
+                transition: none;
+            }
+            .image-view.mobile {
+                background: black;
+            }
+            .image-view.mobile .viewer-content {
+                background: black;
+            }
+        }
+        @media (max-width: 600px) {
+            .viewer-content {
+                padding: 12px 24px;  /* Added horizontal padding */
+            }
+            .viewer-img {
+                max-height: calc(100vh - 150px);
+            }
+        }
+        @media (max-width: 400px) {
+            .viewer-content {
+                padding: 8px 16px;  /* Reduced padding for very small screens */
+            }
+        }
+        </style>
+        </head>
+        <body>
+        <div class="gallery-header">
+            <h1 class="gallery-title">2025-Rakhi</h1>
+        </div>
+        <div class="gallery-view">
+            <div class="gallery-container">
+            <div class="masonry">
+        <img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250807214152_0704_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250807214152_0704_D.JPG" data-filename="DJI_20250807214152_0704_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250807214152_0704_D.JPG', 'DJI_20250807214152_0704_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250807214155_0705_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250807214155_0705_D.JPG" data-filename="DJI_20250807214155_0705_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250807214155_0705_D.JPG', 'DJI_20250807214155_0705_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809081441_0711_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809081441_0711_D.JPG" data-filename="DJI_20250809081441_0711_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809081441_0711_D.JPG', 'DJI_20250809081441_0711_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809081518_0714_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809081518_0714_D.JPG" data-filename="DJI_20250809081518_0714_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809081518_0714_D.JPG', 'DJI_20250809081518_0714_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809081552_0715_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809081552_0715_D.JPG" data-filename="DJI_20250809081552_0715_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809081552_0715_D.JPG', 'DJI_20250809081552_0715_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809081604_0716_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809081604_0716_D.JPG" data-filename="DJI_20250809081604_0716_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809081604_0716_D.JPG', 'DJI_20250809081604_0716_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809081631_0718_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809081631_0718_D.JPG" data-filename="DJI_20250809081631_0718_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809081631_0718_D.JPG', 'DJI_20250809081631_0718_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809081637_0719_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809081637_0719_D.JPG" data-filename="DJI_20250809081637_0719_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809081637_0719_D.JPG', 'DJI_20250809081637_0719_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809082641_0720_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809082641_0720_D.JPG" data-filename="DJI_20250809082641_0720_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809082641_0720_D.JPG', 'DJI_20250809082641_0720_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809082644_0721_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809082644_0721_D.JPG" data-filename="DJI_20250809082644_0721_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809082644_0721_D.JPG', 'DJI_20250809082644_0721_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809082658_0722_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809082658_0722_D.JPG" data-filename="DJI_20250809082658_0722_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809082658_0722_D.JPG', 'DJI_20250809082658_0722_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809082710_0723_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809082710_0723_D.JPG" data-filename="DJI_20250809082710_0723_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809082710_0723_D.JPG', 'DJI_20250809082710_0723_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809083022_0726_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083022_0726_D.JPG" data-filename="DJI_20250809083022_0726_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083022_0726_D.JPG', 'DJI_20250809083022_0726_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809083024_0727_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083024_0727_D.JPG" data-filename="DJI_20250809083024_0727_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083024_0727_D.JPG', 'DJI_20250809083024_0727_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809083028_0728_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083028_0728_D.JPG" data-filename="DJI_20250809083028_0728_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083028_0728_D.JPG', 'DJI_20250809083028_0728_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809083044_0729_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083044_0729_D.JPG" data-filename="DJI_20250809083044_0729_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083044_0729_D.JPG', 'DJI_20250809083044_0729_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809083306_0732_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083306_0732_D.JPG" data-filename="DJI_20250809083306_0732_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083306_0732_D.JPG', 'DJI_20250809083306_0732_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809083314_0733_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083314_0733_D.JPG" data-filename="DJI_20250809083314_0733_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083314_0733_D.JPG', 'DJI_20250809083314_0733_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809083502_0735_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083502_0735_D.JPG" data-filename="DJI_20250809083502_0735_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083502_0735_D.JPG', 'DJI_20250809083502_0735_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809083506_0736_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083506_0736_D.JPG" data-filename="DJI_20250809083506_0736_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083506_0736_D.JPG', 'DJI_20250809083506_0736_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809083528_0737_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083528_0737_D.JPG" data-filename="DJI_20250809083528_0737_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083528_0737_D.JPG', 'DJI_20250809083528_0737_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809083533_0738_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083533_0738_D.JPG" data-filename="DJI_20250809083533_0738_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083533_0738_D.JPG', 'DJI_20250809083533_0738_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809083538_0739_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083538_0739_D.JPG" data-filename="DJI_20250809083538_0739_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083538_0739_D.JPG', 'DJI_20250809083538_0739_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809083934_0742_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083934_0742_D.JPG" data-filename="DJI_20250809083934_0742_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083934_0742_D.JPG', 'DJI_20250809083934_0742_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809083938_0743_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083938_0743_D.JPG" data-filename="DJI_20250809083938_0743_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809083938_0743_D.JPG', 'DJI_20250809083938_0743_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809084108_0745_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809084108_0745_D.JPG" data-filename="DJI_20250809084108_0745_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809084108_0745_D.JPG', 'DJI_20250809084108_0745_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809084111_0746_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809084111_0746_D.JPG" data-filename="DJI_20250809084111_0746_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809084111_0746_D.JPG', 'DJI_20250809084111_0746_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093158_0749_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093158_0749_D.JPG" data-filename="DJI_20250809093158_0749_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093158_0749_D.JPG', 'DJI_20250809093158_0749_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093202_0750_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093202_0750_D.JPG" data-filename="DJI_20250809093202_0750_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093202_0750_D.JPG', 'DJI_20250809093202_0750_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093206_0751_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093206_0751_D.JPG" data-filename="DJI_20250809093206_0751_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093206_0751_D.JPG', 'DJI_20250809093206_0751_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093212_0752_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093212_0752_D.JPG" data-filename="DJI_20250809093212_0752_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093212_0752_D.JPG', 'DJI_20250809093212_0752_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093219_0753_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093219_0753_D.JPG" data-filename="DJI_20250809093219_0753_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093219_0753_D.JPG', 'DJI_20250809093219_0753_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093238_0754_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093238_0754_D.JPG" data-filename="DJI_20250809093238_0754_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093238_0754_D.JPG', 'DJI_20250809093238_0754_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093240_0755_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093240_0755_D.JPG" data-filename="DJI_20250809093240_0755_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093240_0755_D.JPG', 'DJI_20250809093240_0755_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093246_0756_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093246_0756_D.JPG" data-filename="DJI_20250809093246_0756_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093246_0756_D.JPG', 'DJI_20250809093246_0756_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093249_0757_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093249_0757_D.JPG" data-filename="DJI_20250809093249_0757_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093249_0757_D.JPG', 'DJI_20250809093249_0757_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093408_0758_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093408_0758_D.JPG" data-filename="DJI_20250809093408_0758_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093408_0758_D.JPG', 'DJI_20250809093408_0758_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093449_0759_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093449_0759_D.JPG" data-filename="DJI_20250809093449_0759_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093449_0759_D.JPG', 'DJI_20250809093449_0759_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093744_0761_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093744_0761_D.JPG" data-filename="DJI_20250809093744_0761_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093744_0761_D.JPG', 'DJI_20250809093744_0761_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093750_0762_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093750_0762_D.JPG" data-filename="DJI_20250809093750_0762_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093750_0762_D.JPG', 'DJI_20250809093750_0762_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093753_0763_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093753_0763_D.JPG" data-filename="DJI_20250809093753_0763_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093753_0763_D.JPG', 'DJI_20250809093753_0763_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093813_0764_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093813_0764_D.JPG" data-filename="DJI_20250809093813_0764_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093813_0764_D.JPG', 'DJI_20250809093813_0764_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093815_0765_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093815_0765_D.JPG" data-filename="DJI_20250809093815_0765_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093815_0765_D.JPG', 'DJI_20250809093815_0765_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093829_0766_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093829_0766_D.JPG" data-filename="DJI_20250809093829_0766_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093829_0766_D.JPG', 'DJI_20250809093829_0766_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093949_0767_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093949_0767_D.JPG" data-filename="DJI_20250809093949_0767_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093949_0767_D.JPG', 'DJI_20250809093949_0767_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093953_0768_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093953_0768_D.JPG" data-filename="DJI_20250809093953_0768_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093953_0768_D.JPG', 'DJI_20250809093953_0768_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809093956_0769_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093956_0769_D.JPG" data-filename="DJI_20250809093956_0769_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809093956_0769_D.JPG', 'DJI_20250809093956_0769_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809094014_0770_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809094014_0770_D.JPG" data-filename="DJI_20250809094014_0770_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809094014_0770_D.JPG', 'DJI_20250809094014_0770_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809094017_0771_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809094017_0771_D.JPG" data-filename="DJI_20250809094017_0771_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809094017_0771_D.JPG', 'DJI_20250809094017_0771_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809094022_0772_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809094022_0772_D.JPG" data-filename="DJI_20250809094022_0772_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809094022_0772_D.JPG', 'DJI_20250809094022_0772_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809094024_0773_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809094024_0773_D.JPG" data-filename="DJI_20250809094024_0773_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809094024_0773_D.JPG', 'DJI_20250809094024_0773_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809094106_0774_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809094106_0774_D.JPG" data-filename="DJI_20250809094106_0774_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809094106_0774_D.JPG', 'DJI_20250809094106_0774_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809094109_0775_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809094109_0775_D.JPG" data-filename="DJI_20250809094109_0775_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809094109_0775_D.JPG', 'DJI_20250809094109_0775_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809100812_0778_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809100812_0778_D.JPG" data-filename="DJI_20250809100812_0778_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809100812_0778_D.JPG', 'DJI_20250809100812_0778_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809101024_0779_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809101024_0779_D.JPG" data-filename="DJI_20250809101024_0779_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809101024_0779_D.JPG', 'DJI_20250809101024_0779_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809101041_0780_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809101041_0780_D.JPG" data-filename="DJI_20250809101041_0780_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809101041_0780_D.JPG', 'DJI_20250809101041_0780_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809101045_0781_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809101045_0781_D.JPG" data-filename="DJI_20250809101045_0781_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809101045_0781_D.JPG', 'DJI_20250809101045_0781_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809101047_0782_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809101047_0782_D.JPG" data-filename="DJI_20250809101047_0782_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809101047_0782_D.JPG', 'DJI_20250809101047_0782_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809104821_0783_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809104821_0783_D.JPG" data-filename="DJI_20250809104821_0783_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809104821_0783_D.JPG', 'DJI_20250809104821_0783_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809104824_0784_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809104824_0784_D.JPG" data-filename="DJI_20250809104824_0784_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809104824_0784_D.JPG', 'DJI_20250809104824_0784_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809104831_0785_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809104831_0785_D.JPG" data-filename="DJI_20250809104831_0785_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809104831_0785_D.JPG', 'DJI_20250809104831_0785_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809112828_0790_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809112828_0790_D.JPG" data-filename="DJI_20250809112828_0790_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809112828_0790_D.JPG', 'DJI_20250809112828_0790_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809112830_0791_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809112830_0791_D.JPG" data-filename="DJI_20250809112830_0791_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809112830_0791_D.JPG', 'DJI_20250809112830_0791_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809112841_0792_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809112841_0792_D.JPG" data-filename="DJI_20250809112841_0792_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809112841_0792_D.JPG', 'DJI_20250809112841_0792_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809112857_0793_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809112857_0793_D.JPG" data-filename="DJI_20250809112857_0793_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809112857_0793_D.JPG', 'DJI_20250809112857_0793_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809112907_0794_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809112907_0794_D.JPG" data-filename="DJI_20250809112907_0794_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809112907_0794_D.JPG', 'DJI_20250809112907_0794_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809112909_0795_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809112909_0795_D.JPG" data-filename="DJI_20250809112909_0795_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809112909_0795_D.JPG', 'DJI_20250809112909_0795_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809112946_0796_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809112946_0796_D.JPG" data-filename="DJI_20250809112946_0796_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809112946_0796_D.JPG', 'DJI_20250809112946_0796_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809112948_0797_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809112948_0797_D.JPG" data-filename="DJI_20250809112948_0797_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809112948_0797_D.JPG', 'DJI_20250809112948_0797_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809113019_0798_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809113019_0798_D.JPG" data-filename="DJI_20250809113019_0798_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809113019_0798_D.JPG', 'DJI_20250809113019_0798_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809113035_0799_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809113035_0799_D.JPG" data-filename="DJI_20250809113035_0799_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809113035_0799_D.JPG', 'DJI_20250809113035_0799_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809113040_0800_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809113040_0800_D.JPG" data-filename="DJI_20250809113040_0800_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809113040_0800_D.JPG', 'DJI_20250809113040_0800_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809113103_0801_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809113103_0801_D.JPG" data-filename="DJI_20250809113103_0801_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809113103_0801_D.JPG', 'DJI_20250809113103_0801_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809113112_0802_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809113112_0802_D.JPG" data-filename="DJI_20250809113112_0802_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809113112_0802_D.JPG', 'DJI_20250809113112_0802_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809113135_0803_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809113135_0803_D.JPG" data-filename="DJI_20250809113135_0803_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809113135_0803_D.JPG', 'DJI_20250809113135_0803_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809113139_0804_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809113139_0804_D.JPG" data-filename="DJI_20250809113139_0804_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809113139_0804_D.JPG', 'DJI_20250809113139_0804_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809114301_0806_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809114301_0806_D.JPG" data-filename="DJI_20250809114301_0806_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809114301_0806_D.JPG', 'DJI_20250809114301_0806_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809114321_0807_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809114321_0807_D.JPG" data-filename="DJI_20250809114321_0807_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809114321_0807_D.JPG', 'DJI_20250809114321_0807_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809114933_0809_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809114933_0809_D.JPG" data-filename="DJI_20250809114933_0809_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809114933_0809_D.JPG', 'DJI_20250809114933_0809_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809114935_0810_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809114935_0810_D.JPG" data-filename="DJI_20250809114935_0810_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809114935_0810_D.JPG', 'DJI_20250809114935_0810_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809114937_0811_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809114937_0811_D.JPG" data-filename="DJI_20250809114937_0811_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809114937_0811_D.JPG', 'DJI_20250809114937_0811_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809114956_0812_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809114956_0812_D.JPG" data-filename="DJI_20250809114956_0812_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809114956_0812_D.JPG', 'DJI_20250809114956_0812_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809114958_0813_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809114958_0813_D.JPG" data-filename="DJI_20250809114958_0813_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809114958_0813_D.JPG', 'DJI_20250809114958_0813_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809115001_0814_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809115001_0814_D.JPG" data-filename="DJI_20250809115001_0814_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809115001_0814_D.JPG', 'DJI_20250809115001_0814_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809115003_0815_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809115003_0815_D.JPG" data-filename="DJI_20250809115003_0815_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809115003_0815_D.JPG', 'DJI_20250809115003_0815_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809115017_0816_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809115017_0816_D.JPG" data-filename="DJI_20250809115017_0816_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809115017_0816_D.JPG', 'DJI_20250809115017_0816_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809115030_0817_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809115030_0817_D.JPG" data-filename="DJI_20250809115030_0817_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809115030_0817_D.JPG', 'DJI_20250809115030_0817_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809115033_0818_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809115033_0818_D.JPG" data-filename="DJI_20250809115033_0818_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809115033_0818_D.JPG', 'DJI_20250809115033_0818_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809115041_0819_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809115041_0819_D.JPG" data-filename="DJI_20250809115041_0819_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809115041_0819_D.JPG', 'DJI_20250809115041_0819_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809115043_0820_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809115043_0820_D.JPG" data-filename="DJI_20250809115043_0820_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809115043_0820_D.JPG', 'DJI_20250809115043_0820_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809121907_0822_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809121907_0822_D.JPG" data-filename="DJI_20250809121907_0822_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809121907_0822_D.JPG', 'DJI_20250809121907_0822_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809121910_0823_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809121910_0823_D.JPG" data-filename="DJI_20250809121910_0823_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809121910_0823_D.JPG', 'DJI_20250809121910_0823_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809121915_0824_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809121915_0824_D.JPG" data-filename="DJI_20250809121915_0824_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809121915_0824_D.JPG', 'DJI_20250809121915_0824_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809121917_0825_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809121917_0825_D.JPG" data-filename="DJI_20250809121917_0825_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809121917_0825_D.JPG', 'DJI_20250809121917_0825_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809124018_0828_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809124018_0828_D.JPG" data-filename="DJI_20250809124018_0828_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809124018_0828_D.JPG', 'DJI_20250809124018_0828_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809124335_0829_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809124335_0829_D.JPG" data-filename="DJI_20250809124335_0829_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809124335_0829_D.JPG', 'DJI_20250809124335_0829_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809124347_0830_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809124347_0830_D.JPG" data-filename="DJI_20250809124347_0830_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809124347_0830_D.JPG', 'DJI_20250809124347_0830_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809124349_0831_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809124349_0831_D.JPG" data-filename="DJI_20250809124349_0831_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809124349_0831_D.JPG', 'DJI_20250809124349_0831_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809124355_0832_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809124355_0832_D.JPG" data-filename="DJI_20250809124355_0832_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809124355_0832_D.JPG', 'DJI_20250809124355_0832_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809124358_0833_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809124358_0833_D.JPG" data-filename="DJI_20250809124358_0833_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809124358_0833_D.JPG', 'DJI_20250809124358_0833_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809130651_0834_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809130651_0834_D.JPG" data-filename="DJI_20250809130651_0834_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809130651_0834_D.JPG', 'DJI_20250809130651_0834_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809133400_0840_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809133400_0840_D.JPG" data-filename="DJI_20250809133400_0840_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809133400_0840_D.JPG', 'DJI_20250809133400_0840_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809134715_0846_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809134715_0846_D.JPG" data-filename="DJI_20250809134715_0846_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809134715_0846_D.JPG', 'DJI_20250809134715_0846_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809171435_0847_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809171435_0847_D.JPG" data-filename="DJI_20250809171435_0847_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809171435_0847_D.JPG', 'DJI_20250809171435_0847_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809171445_0848_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809171445_0848_D.JPG" data-filename="DJI_20250809171445_0848_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809171445_0848_D.JPG', 'DJI_20250809171445_0848_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809171609_0850_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809171609_0850_D.JPG" data-filename="DJI_20250809171609_0850_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809171609_0850_D.JPG', 'DJI_20250809171609_0850_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809171614_0851_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809171614_0851_D.JPG" data-filename="DJI_20250809171614_0851_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809171614_0851_D.JPG', 'DJI_20250809171614_0851_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809171636_0852_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809171636_0852_D.JPG" data-filename="DJI_20250809171636_0852_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809171636_0852_D.JPG', 'DJI_20250809171636_0852_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809171639_0853_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809171639_0853_D.JPG" data-filename="DJI_20250809171639_0853_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809171639_0853_D.JPG', 'DJI_20250809171639_0853_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809171808_0854_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809171808_0854_D.JPG" data-filename="DJI_20250809171808_0854_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809171808_0854_D.JPG', 'DJI_20250809171808_0854_D.JPG')">
+<img src="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/thumbnails/DJI_20250809171812_0855_D.JPG" data-orig-url="https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809171812_0855_D.JPG" data-filename="DJI_20250809171812_0855_D.JPG" loading="lazy" onclick="showImage('https://raw.githubusercontent.com/lifetime-memories/2025-Rakhi/main/DJI_20250809171812_0855_D.JPG', 'DJI_20250809171812_0855_D.JPG')">
+
+            </div>
+        </div>
+        </div>
+        
+        <div class="image-view" onclick="if(event.target === this) hideImage()">
+            <div class="viewer-header controls-container">
+                <h2 class="viewer-title"></h2>
+                <div class="viewer-buttons">
+                    <button onclick="event.stopPropagation(); downloadImage()">Download</button>
+                    <button onclick="event.stopPropagation(); zoomIn()">Zoom In</button>
+                    <button onclick="event.stopPropagation(); zoomOut()">Zoom Out</button>
+                    <button onclick="event.stopPropagation(); hideImage()">Close</button>
+                    <button onclick="openInNewTab()">Open in New Tab</button>
+                    <button onclick="backToGallery()">Back to Gallery</button>
+                </div>
+            </div>
+            <div class="viewer-content">
+                <img id="viewerImg" class="viewer-img" src="" />
+            </div>
+        </div>
+        
+        <script>
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            let longPressTimer = null;
+            let currentOrigUrl = null;
+            let currentFilename = null;
+            let currentScale = 1;
+            let currentTranslateX = 0;
+            let currentTranslateY = 0;
+            let galleryView = document.querySelector('.gallery-view');
+            let imageView = document.querySelector('.image-view');
+            let viewerImg = document.getElementById('viewerImg');
+            let viewerTitle = document.querySelector('.viewer-title');
+            
+            // Touch gesture variables for pinch-to-zoom
+            let initialDistance = 0;
+            let initialScale = 1;
+            let initialTranslateX = 0;
+            let initialTranslateY = 0;
+            let isPinching = false;
+            let lastTouchTime = 0;
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let lastTouchX = 0;
+            let lastTouchY = 0;
+            let isPanning = false;
+            
+            function updateImageTransform() {
+                viewerImg.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+            }
+            
+            function constrainPan() {
+                const rect = viewerImg.getBoundingClientRect();
+                const containerRect = document.querySelector('.viewer-content').getBoundingClientRect();
+                
+                // Calculate the scaled dimensions
+                const scaledWidth = rect.width * currentScale;
+                const scaledHeight = rect.height * currentScale;
+                
+                // Calculate maximum pan limits
+                const maxPanX = Math.max(0, (scaledWidth - containerRect.width) / 2);
+                const maxPanY = Math.max(0, (scaledHeight - containerRect.height) / 2);
+                
+                // Constrain panning
+                currentTranslateX = Math.max(-maxPanX, Math.min(maxPanX, currentTranslateX));
+                currentTranslateY = Math.max(-maxPanY, Math.min(maxPanY, currentTranslateY));
+            }
+            
+            function showImage(origUrl, filename) {
+                currentOrigUrl = origUrl;
+                currentFilename = filename;
+                currentScale = 1;
+                currentTranslateX = 0;
+                currentTranslateY = 0;
+                
+                viewerImg.src = origUrl;
+                viewerTitle.textContent = filename;
+                imageView.style.display = 'flex';
+                
+                // Add to browser history for both mobile and desktop
+                history.pushState({view: 'image', origUrl: origUrl, filename: filename}, filename, '#image');
+                
+                if (isMobile) {
+                    imageView.classList.add('mobile');
+                    document.querySelector('.controls-container').style.display = 'none';
+                    // Reset transform for mobile
+                    updateImageTransform();
+                } else {
+                    imageView.classList.remove('mobile');
+                    document.querySelector('.controls-container').style.display = 'flex';
+                    galleryView.style.display = 'none';
+                }
+            }
+            
+            function hideImage() {
+                imageView.style.display = 'none';
+                currentOrigUrl = null;
+                currentFilename = null;
+                currentScale = 1;
+                currentTranslateX = 0;
+                currentTranslateY = 0;
+                updateImageTransform();
+            }
+            
+            function zoomIn() {
+                const oldScale = currentScale;
+                currentScale = Math.min(currentScale * 1.2, 3);
+                
+                // Adjust translation to zoom towards center
+                const scaleRatio = currentScale / oldScale;
+                currentTranslateX *= scaleRatio;
+                currentTranslateY *= scaleRatio;
+                
+                constrainPan();
+                updateImageTransform();
+            }
+            
+            function zoomOut() {
+                const oldScale = currentScale;
+                currentScale = Math.max(currentScale / 1.2, 0.5);
+                
+                // Adjust translation to zoom towards center
+                const scaleRatio = currentScale / oldScale;
+                currentTranslateX *= scaleRatio;
+                currentTranslateY *= scaleRatio;
+                
+                constrainPan();
+                updateImageTransform();
+            }
+
+            function downloadImage() {
+                if (currentOrigUrl && currentFilename) {
+                    // Call the Python backend to handle download
+                    if (window.backend) {
+                        window.backend.downloadImage(currentOrigUrl, currentFilename);
+                    }
+                }
+            }
+
+            function backToGallery() {
+                imageView.style.display = 'none';
+                galleryView.style.display = 'block';
+                viewerImg.src = '';
+                currentOrigUrl = null;
+                currentFilename = null;
+                currentScale = 1;
+                currentTranslateX = 0;
+                currentTranslateY = 0;
+                updateImageTransform();
+                
+                // Update browser history to go back to gallery
+                if (history.state && history.state.view === 'image') {
+                    history.back();
+                }
+            }
+
+            function openInNewTab() {
+                if (currentOrigUrl) {
+                    window.open(currentOrigUrl, '_blank');
+                }
+            }
+
+            // Calculate distance between two touch points
+            function getDistance(touch1, touch2) {
+                const dx = touch1.clientX - touch2.clientX;
+                const dy = touch1.clientY - touch2.clientY;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            // Calculate center point between two touches
+            function getTouchCenter(touch1, touch2) {
+                return {
+                    x: (touch1.clientX + touch2.clientX) / 2,
+                    y: (touch1.clientY + touch2.clientY) / 2
+                };
+            }
+
+            // Touch event handlers for pinch-to-zoom and pan
+            function handleTouchStart(e) {
+                if (e.touches.length === 2) {
+                    // Two finger touch - start pinch gesture
+                    isPinching = true;
+                    isPanning = false;
+                    initialDistance = getDistance(e.touches[0], e.touches[1]);
+                    initialScale = currentScale;
+                    initialTranslateX = currentTranslateX;
+                    initialTranslateY = currentTranslateY;
+                    
+                    const center = getTouchCenter(e.touches[0], e.touches[1]);
+                    const rect = viewerImg.getBoundingClientRect();
+                    const containerRect = document.querySelector('.viewer-content').getBoundingClientRect();
+                    
+                    // Calculate touch point relative to image center
+                    touchStartX = center.x - (rect.left + rect.width / 2);
+                    touchStartY = center.y - (rect.top + rect.height / 2);
+                    
+                    e.preventDefault();
+                } else if (e.touches.length === 1) {
+                    // Single touch - start panning or double tap
+                    isPanning = true;
+                    isPinching = false;
+                    lastTouchX = e.touches[0].clientX;
+                    lastTouchY = e.touches[0].clientY;
+                    
+                    const now = Date.now();
+                    if (now - lastTouchTime < 300) {
+                        // Double tap detected
+                        if (currentScale > 1) {
+                            // Reset zoom
+                            currentScale = 1;
+                            currentTranslateX = 0;
+                            currentTranslateY = 0;
+                        } else {
+                            // Zoom in to double tap point
+                            const rect = viewerImg.getBoundingClientRect();
+                            const containerRect = document.querySelector('.viewer-content').getBoundingClientRect();
+                            
+                            // Calculate zoom center relative to image
+                            const zoomCenterX = e.touches[0].clientX - (rect.left + rect.width / 2);
+                            const zoomCenterY = e.touches[0].clientY - (rect.top + rect.height / 2);
+                            
+                            // Zoom in
+                            currentScale = 2;
+                            
+                            // Adjust translation to zoom towards touch point
+                            currentTranslateX = -zoomCenterX * (currentScale - 1);
+                            currentTranslateY = -zoomCenterY * (currentScale - 1);
+                            
+                            constrainPan();
+                        }
+                        updateImageTransform();
+                        e.preventDefault();
+                    }
+                    lastTouchTime = now;
+                }
+            }
+
+            function handleTouchMove(e) {
+                if (isPinching && e.touches.length === 2) {
+                    // Continue pinch gesture
+                    const currentDistance = getDistance(e.touches[0], e.touches[1]);
+                    const scale = currentDistance / initialDistance;
+                    const newScale = Math.max(0.5, Math.min(3, initialScale * scale));
+                    
+                    // Calculate zoom center
+                    const center = getTouchCenter(e.touches[0], e.touches[1]);
+                    const rect = viewerImg.getBoundingClientRect();
+                    const containerRect = document.querySelector('.viewer-content').getBoundingClientRect();
+                    
+                    // Calculate touch point relative to image center
+                    const touchX = center.x - (rect.left + rect.width / 2);
+                    const touchY = center.y - (rect.top + rect.height / 2);
+                    
+                    // Calculate scale change
+                    const scaleChange = newScale / currentScale;
+                    
+                    // Adjust translation to zoom towards touch point
+                    currentTranslateX = touchX - (touchX - currentTranslateX) * scaleChange;
+                    currentTranslateY = touchY - (touchY - currentTranslateY) * scaleChange;
+                    
+                    currentScale = newScale;
+                    constrainPan();
+                    updateImageTransform();
+                    
+                    e.preventDefault();
+                } else if (isPanning && e.touches.length === 1 && currentScale > 1) {
+                    // Pan the image
+                    const deltaX = e.touches[0].clientX - lastTouchX;
+                    const deltaY = e.touches[0].clientY - lastTouchY;
+                    
+                    currentTranslateX += deltaX;
+                    currentTranslateY += deltaY;
+                    
+                    constrainPan();
+                    updateImageTransform();
+                    
+                    lastTouchX = e.touches[0].clientX;
+                    lastTouchY = e.touches[0].clientY;
+                    
+                    e.preventDefault();
+                }
+            }
+
+            function handleTouchEnd(e) {
+                if (isPinching) {
+                    // End pinch gesture
+                    isPinching = false;
+                    initialDistance = 0;
+                    initialScale = 1;
+                }
+                if (isPanning) {
+                    // End panning
+                    isPanning = false;
+                }
+            }
+
+            // Handle browser back button for both mobile and desktop
+            window.addEventListener('popstate', function(e) {
+                if (imageView.style.display === 'flex') {
+                    hideImage();
+                    // Show gallery view on desktop
+                    if (!isMobile) {
+                        galleryView.style.display = 'block';
+                    }
+                }
+            });
+
+            // Set up mobile-specific handlers
+            if (isMobile) {
+                document.addEventListener('DOMContentLoaded', function() {
+                    const images = document.querySelectorAll('.masonry img');
+                    
+                    images.forEach(img => {
+                        // Handle long press for download
+                        img.addEventListener('touchstart', function(e) {
+                            const origUrl = this.getAttribute('data-orig-url');
+                            const filename = this.getAttribute('data-filename');
+                            
+                            longPressTimer = setTimeout(() => {
+                                e.preventDefault();
+                                if (window.backend) {
+                                    window.backend.downloadImage(origUrl, filename);
+                                }
+                            }, 800);
+                        });
+
+                        img.addEventListener('touchend', function() {
+                            if (longPressTimer) {
+                                clearTimeout(longPressTimer);
+                            }
+                        });
+
+                        img.addEventListener('touchmove', function() {
+                            if (longPressTimer) {
+                                clearTimeout(longPressTimer);
+                            }
+                        });
+                    });
+
+                    // Add touch event listeners to the image viewer for pinch-to-zoom and pan
+                    viewerImg.addEventListener('touchstart', handleTouchStart, { passive: false });
+                    viewerImg.addEventListener('touchmove', handleTouchMove, { passive: false });
+                    viewerImg.addEventListener('touchend', handleTouchEnd, { passive: false });
+                });
+            }
+
+            document.addEventListener('keydown', function(e) {
+                if (imageView.style.display === 'flex') {
+                    if (e.key === 'Escape') hideImage();
+                    if (e.key === '+') zoomIn();
+                    if (e.key === '-') zoomOut();
+                }
+            });
+        </script>
+        </body></html>
+        
